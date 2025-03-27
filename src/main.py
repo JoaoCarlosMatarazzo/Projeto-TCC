@@ -3,7 +3,7 @@ import time
 
 # Configurações da tela
 SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_HEIGHT = 700
 FPS = 60
 
 # Cores
@@ -15,13 +15,20 @@ BLACK = (0, 0, 0)
 
 # Posição inicial dos pontos
 red_x, red_y = 400, 100
-blue_x, blue_y = 400, 150
+blue_x, blue_y = 400, 70
 
 yellow_points = [{'x': x, 'y': 300, 'direction': 1} for x in range(200, 600, 100)]
 
 # Estados de movimento
 red_moving_down = True  # Define a direção do movimento do vermelho e azul
 waiting = False  # Estado de espera dos pontos vermelho e azul
+returning = False  # Indica se os pontos estão retornando
+wait_start = 2  # Para controle do tempo de espera
+
+def swap_positions():
+    global red_x, red_y, blue_x, blue_y
+    red_y, blue_y = blue_y, red_y  # Troca de posição verticalmente
+
 
 # Inicializa o pygame
 pygame.init()
@@ -33,7 +40,7 @@ running = True
 while running:
     screen.fill(WHITE)
     
-    # Eventos
+    # Eventos se a tela foi fechada
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -44,24 +51,30 @@ while running:
     
     # Movimento dos pontos vermelho e azul
     if not waiting:
-        if red_moving_down:
+        if red_moving_down and not returning:
             red_y += 2
             blue_y += 2
-            if red_y >= 450:  # Ponto de parada antes de sair do corredor
+            if red_y >= 510:  # Ponto de parada antes de sair do corredor
                 red_moving_down = False
-                waiting = True
-                wait_start = time.time()
-        else:
+                swap_positions()
+                # waiting = True
+                # wait_start = time.time()
+                returning = True
+        elif returning:
             red_y -= 2
             blue_y -= 2
-            if red_y <= 100:  # Ponto de retorno
+            if red_y <= 100:    # Ponto de parada antes de sair do corredor
+                returning = False
+                swap_positions()
                 red_moving_down = True
-                waiting = True
-                wait_start = time.time()
-    else:
-        if time.time() - wait_start >= 5:  # Aguarda 5 segundos
+                # waiting = True
+                # wait_start = time.time()
+                # returning = False
+                # wait_start = time.time()
+    elif waiting:
+        if time.time() - wait_start >= 2:  # Aguarda 2 segundos
             waiting = False
-    
+            
     # Verifica se os pontos vermelho e azul estão na frente dos amarelos
     yellow_moving = not (250 <= red_y <= 350)
     
