@@ -23,7 +23,7 @@ yellow_points = [{'x': x, 'y': 300, 'direction': 1} for x in range(200, 600, 100
 red_moving_down = True  # Define a direção do movimento do vermelho e azul
 waiting = False  # Estado de espera dos pontos vermelho e azul
 returning = False  # Indica se os pontos estão retornando
-wait_start = 2  # Para controle do tempo de espera
+wait_start = 0  # Para controle do tempo de espera
 
 def swap_positions():
     global red_x, red_y, blue_x, blue_y
@@ -57,8 +57,8 @@ while running:
             if red_y >= 510:  # Ponto de parada antes de sair do corredor
                 red_moving_down = False
                 swap_positions()
-                # waiting = True
-                # wait_start = time.time()
+                waiting = True
+                wait_start = time.time()
                 returning = True
         elif returning:
             red_y -= 2
@@ -66,15 +66,14 @@ while running:
             if red_y <= 100:    # Ponto de parada antes de sair do corredor
                 returning = False
                 swap_positions()
+                waiting = True
+                wait_start = time.time()
                 red_moving_down = True
-                # waiting = True
-                # wait_start = time.time()
-                # returning = False
-                # wait_start = time.time()
+
     elif waiting:
         if time.time() - wait_start >= 2:  # Aguarda 2 segundos
             waiting = False
-            
+
     # Verifica se os pontos vermelho e azul estão na frente dos amarelos
     yellow_moving = not (250 <= red_y <= 350)
     
