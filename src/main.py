@@ -26,16 +26,15 @@ yellow_points_bottom = [{'x': x, 'y': 320, 'direction': -1} for x in range(200, 
 red_moving_down = True
 waiting = False
 returning = False
-wait_start = 0
-signal_green = False
-signal_timer = None
+wait_start = None  # Tempo de espera dos pontos
+signal_timer = None  # Timer para mudar a linha de cor
+signal_green = False  # Estado da linha de sinalização
 
 # Coordenadas da linha de parada
 initial_position = 100
 stop_position_down = 230
 stop_position_up = 370
 final_position = 510
-
 
 def swap_positions():
     global red_y, blue_y
@@ -61,14 +60,15 @@ while running:
     pygame.draw.rect(screen, BLACK, (350, 50, 100, 500))   # Corredor vertical
     
     # Controle das linhas de sinalização
-    if signal_timer:
-        elapsed = time.time() - signal_timer
-        if elapsed >= 2:
-            signal_green = True  # Muda para verde após 2 segundos
-        if elapsed >= 5:
-            signal_green = False  # Volta para vermelho após mais 3 segundos
-            signal_timer = None
-    
+    if signal_timer is not None:
+        elapsed_time = time.time() - signal_timer
+        if elapsed_time >= 2:  # Após 2s, a linha fica verde
+            signal_green = True
+        if elapsed_time >= 5:  # Após 5s totais (2s + 3s), a linha volta a ser vermelha
+            signal_green = False
+            signal_timer = None  # Reseta o temporizador da linha
+
+    # Define a cor da linha de sinalização
     signal_color = GREEN if signal_green else RED
     pygame.draw.line(screen, signal_color, (350, 250), (450, 250), 5)
     pygame.draw.line(screen, signal_color, (350, 350), (450, 350), 5)
@@ -79,10 +79,11 @@ while running:
             if red_y == stop_position_down and signal_timer is None:
                 waiting = True
                 signal_timer = time.time()  # Inicia temporizador da linha de sinalização
-                red_moving_down = True
-                wait_start = time.time()
-            elif signal_green and time.time() - wait_start >= 3:
-                waiting = False  # Após 3s no verde, os pontos continuam
+                wait_start = time.time()  # Inicia tempo de espera dos pontos
+            elif signal_green and wait_start is not None and time.time() - wait_start >= 3:  
+                # Após 3s no verde, os pontos continuam
+                waiting = False  
+                wait_start = None  # Reseta o tempo de espera dos pontos
             else:
                 red_y += 2
                 blue_y += 2
@@ -92,13 +93,16 @@ while running:
                     waiting = True
                     wait_start = time.time()
                     returning = True
+
         elif returning:
             if red_y == stop_position_up and signal_timer is None:
                 waiting = True
-                signal_timer = time.time()
-                wait_start = time.time()
-            elif signal_green and time.time() - wait_start >= 3:
-                waiting = False
+                signal_timer = time.time()  # Inicia temporizador da linha de sinalização
+                wait_start = time.time()  # Inicia tempo de espera dos pontos
+            elif signal_green and wait_start is not None and time.time() - wait_start >= 3:
+                # Após 3s no verde, os pontos continuam
+                waiting = False  
+                wait_start = None  # Reseta o tempo de espera dos pontos
             else:
                 red_y -= 2
                 blue_y -= 2
@@ -108,9 +112,16 @@ while running:
                     waiting = True
                     wait_start = time.time()
                     red_moving_down = True
+
+    elif waiting and wait_start is not None:
+        if time.time() - wait_start >= 3:  # Tempo de espera dos pontos antes de atravessar
+            waiting = False
+            wait_start = None
+    
+    # Verifica se os pontos vermelho e azul estão na frente dos amarelos
+    yellow_moving = not (250 <= red_y <= 350)
     
     # Movimento dos pontos amarelos
-    yellow_moving = not (250 <= red_y <= 350)
     if yellow_moving or waiting:
         for point in yellow_points_top + yellow_points_bottom:
             point['x'] += 2 * point['direction']
