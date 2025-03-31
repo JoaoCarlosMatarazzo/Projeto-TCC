@@ -13,14 +13,16 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
+ROXO = (128, 0, 128)
+CYAN = (0, 255, 255)
 
 # Posição inicial dos pontos vermelho e azul
 red_x, red_y = 400, 100
 blue_x, blue_y = 400, 70
 
 # Posição inicial dos pontos amarelos
-yellow_points_top = [{'x': x, 'y': 280, 'direction': 1} for x in range(200, 600, 100)]
-yellow_points_bottom = [{'x': x, 'y': 320, 'direction': -1} for x in range(200, 600, 100)]
+yellow_points_top = [{'x': x, 'y': 270, 'direction': 1} for x in range(200, 600, 50)]
+yellow_points_bottom = [{'x': x, 'y': 330, 'direction': -1} for x in range(200, 600, 50)]
 
 # Estados de movimento
 red_moving_down = True
@@ -35,6 +37,10 @@ initial_position = 100
 stop_position_down = 230
 stop_position_up = 370
 final_position = 510
+
+# Coordenadas da área central da encruzilhada
+center_left = 350
+center_right = 450
 
 def swap_positions():
     global red_y, blue_y
@@ -58,6 +64,9 @@ while running:
     # Desenha as paredes (corredores)
     pygame.draw.rect(screen, BLACK, (150, 250, 500, 100))  # Corredor horizontal
     pygame.draw.rect(screen, BLACK, (350, 50, 100, 500))   # Corredor vertical
+
+    # Desenha a linha roxa vertical no centro do corredor vertical
+    pygame.draw.line(screen, CYAN, (400, 100), (400, 510), 5)  # (Roxo)
     
     # Controle das linhas de sinalização
     if signal_timer is not None:
@@ -118,22 +127,25 @@ while running:
             waiting = False
             wait_start = None
     
-    # Verifica se os pontos vermelho e azul estão na frente dos amarelos
-    yellow_moving = not (250 <= red_y <= 350)
-    
     # Movimento dos pontos amarelos
-    if yellow_moving or waiting:
+    if not signal_green:
         for point in yellow_points_top + yellow_points_bottom:
             point['x'] += 2 * point['direction']
-            if point['x'] >= 600 or point['x'] <= 200:
+            if point['x'] > 598:  # Margem de segurança antes de inverter
+                point['x'] = 598  # Mantém dentro dos limites
                 point['direction'] *= -1
+            elif point['x'] < 202:  # Margem de segurança antes de inverter
+                point['x'] = 202  # Mantém dentro dos limites
+                point['direction'] *= -1
+
     
     # Desenha os pontos
     pygame.draw.circle(screen, RED, (red_x, red_y), 10)
     pygame.draw.circle(screen, BLUE, (blue_x, blue_y), 10)
     
     for point in yellow_points_top + yellow_points_bottom:
-        pygame.draw.circle(screen, YELLOW, (point['x'], point['y']), 10)
+        if not (center_left <= point['x'] <= center_right and signal_green):
+            pygame.draw.circle(screen, YELLOW, (point['x'], point['y']), 10)
     
     pygame.display.flip()
     clock.tick(FPS)
